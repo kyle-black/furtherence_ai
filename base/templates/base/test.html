@@ -1,0 +1,31 @@
+{% extends 'base/home.html' %} {% block content %}
+
+<main class="layout layout--3">
+  <div class="roomList">
+    <div class="Chart-container">
+      <canvas id="myChart"></canvas>
+    </div>
+
+    {% endblock %} {% block scripts %}
+    <script>
+      var ctx = document.getElementById('myChart').getContext('2d');
+      var myChart = new Chart(ctx, {
+          type: 'line',
+          data: {{ data|safe }},
+          options: {
+              responsive: true,
+              plugins: {
+                  legend: {
+                      position: 'top',
+                  },
+                  title: {
+                      display: true,
+                      text: 'Chart.js Line Chart'
+                  }
+              }
+          },
+      });
+    </script>
+    {% endblock %}
+  </div>
+</main>

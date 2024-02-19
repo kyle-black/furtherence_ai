@@ -4,9 +4,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
-from .models import Room, Topic, Message, User
+from .models import Room, Topic, Message, User, Securities_type, Securities
 from .forms import RoomForm, UserForm, MyUserCreationForm
-
+from django.http import HttpResponseBadRequest
+import json
 # Create your views here.
 
 # rooms = [
@@ -72,15 +73,34 @@ def home(request):
         Q(name__icontains=q) |
         Q(description__icontains=q)
     )
-
+    security = Securities.objects.filter(
+        Q(topic__name__icontains=q) |
+        Q(name__icontains=q) |
+        Q(description__icontains=q)
+    )
     topics = Topic.objects.all()[0:5]
+    room_count = rooms.count()
+    room_messages = Message.objects.filter(
+        Q(room__topic__name__icontains=q))[0:3]
+    
+
+    sec_types = Securities_type.objects.all()[0:5]
     room_count = rooms.count()
     room_messages = Message.objects.filter(
         Q(room__topic__name__icontains=q))[0:3]
 
     context = {'rooms': rooms, 'topics': topics,
-               'room_count': room_count, 'room_messages': room_messages}
+               'room_count': room_count, 'room_messages': room_messages, 'security': security, 'sec_types':sec_types}
     return render(request, 'base/home.html', context)
+
+
+
+def security_overview(request, name):
+    sec_over = Securities_type.objects.get(name__iexact=name)
+    security = sec_over.securities_set.all()
+    return render(request, 'base/test.html', {'sec_over': sec_over, 'security':security})    
+    
+
 
 
 def room(request, pk):
@@ -138,7 +158,7 @@ def updateRoom(request, pk):
     form = RoomForm(instance=room)
     topics = Topic.objects.all()
     if request.user != room.host:
-        return HttpResponse('Your are not allowed here!!')
+        return HttpResponse('You are not allowed here!!')
 
     if request.method == 'POST':
         topic_name = request.POST.get('topic')
@@ -158,7 +178,7 @@ def deleteRoom(request, pk):
     room = Room.objects.get(id=pk)
 
     if request.user != room.host:
-        return HttpResponse('Your are not allowed here!!')
+        return HttpResponse('You are not allowed here!!')
 
     if request.method == 'POST':
         room.delete()
@@ -171,7 +191,7 @@ def deleteMessage(request, pk):
     message = Message.objects.get(id=pk)
 
     if request.user != message.user:
-        return HttpResponse('Your are not allowed here!!')
+        return HttpResponse('You are not allowed here!!')
 
     if request.method == 'POST':
         message.delete()
@@ -202,3 +222,18 @@ def topicsPage(request):
 def activityPage(request):
     room_messages = Message.objects.all()
     return render(request, 'base/activity.html', {'room_messages': room_messages})
+
+
+def my_view(request):
+    # Query your financial data here
+    data = {
+        'labels': ['January', 'February', 'March', 'April', 'May', 'June'],
+        'datasets': [{
+            'label': 'My First Dataset',
+            'data': [65, 59, 80, 81, 56, 55],
+            'fill': False,
+            'borderColor': 'rgb(75, 192, 192)',
+            'tension': 0.1
+        }]
+    }
+    return render(request, 'base/test.html', {'data': json.dumps(data)})
