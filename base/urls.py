@@ -21,5 +21,7 @@ urlpatterns = [
 
     path('topics/', views.topicsPage, name="topics"),
     path('activity/', views.activityPage, name="activity"),
-    path('test-chart/', views.my_view, name="test-chart")
+    path('test-chart/', views.my_view, name="test-chart"),
+    
+    path('security/<str:name>/', views.security_detail, name='security-detail'),
 ]

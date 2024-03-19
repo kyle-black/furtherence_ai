@@ -8,6 +8,8 @@ from .models import Room, Topic, Message, User, Securities_type, Securities
 from .forms import RoomForm, UserForm, MyUserCreationForm
 from django.http import HttpResponseBadRequest
 import json
+from django.shortcuts import get_object_or_404
+import redis
 # Create your views here.
 
 # rooms = [
@@ -237,3 +239,60 @@ def my_view(request):
         }]
     }
     return render(request, 'base/test.html', {'data': json.dumps(data)})
+
+
+'''
+def securityPage(request, pk):
+    topic = Securities_type.objects.get(name=pk)
+    rooms = user.room_set.all()
+    room_messages = user.message_set.all()
+    topics = Topic.objects.all()
+    context = {'user': user, 'rooms': rooms,
+               'room_messages': room_messages, 'topics': topics}
+    return render(request, 'base/profile.html', context)
+'''
+def security_detail(request, name):
+    # Get the Securities object with the given name
+    security = get_object_or_404(Securities, name=name)
+
+    REDIS_URL = "redis://default:zHeoOL4uqpzaxTC7YgtuWvq4HRNSsoD0@redis-17905.c326.us-east-1-3.ec2.cloud.redislabs.com:17905"
+
+    # Create a Redis connection
+    r = redis.from_url(REDIS_URL)
+
+    #r = redis.Redis(host='redis-17905.c326.us-east-1-3.ec2.cloud.redislabs.com', port=17905, db=0, password='your_password')
+
+    # Now you can use 'r' to interact with Redis. For example, to get the value of a key:
+    
+    stream_name = f"security:{name}"
+
+    last_entry = r.xrevrange(stream_name, count=1)
+    if last_entry:
+        last_entry = last_entry[0]
+
+    close =  round(float(last_entry[1][b'close'].decode('utf-8')), 3)
+    up_prob =  round(float(last_entry[1][b'up_prob'].decode('utf-8')), 3)
+    down_prob =  round(float(last_entry[1][b'dwn_prob'].decode('utf-8')), 3)
+    time =  last_entry[1][b'time'].decode('utf-8')
+
+
+    
+    
+    #stream_entries = r.xrange(stream_name)
+
+    # You can now use the 'security' object to access data about the security
+    # and pass it to your template. For example, you might pass the security's
+    # name and description to the template.
+
+    context = {
+        'name': security.name,
+        'description': security.description,
+        'stream_entries': last_entry,
+        'close':close,
+        'up_prob':up_prob,
+        'down_prob':down_prob,
+        'time':time,
+        # Add any other data you want to pass to the template here
+    }
+
+    return render(request, 'base/security-detail.html', context)
