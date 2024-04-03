@@ -10,6 +10,7 @@ from django.http import HttpResponseBadRequest
 import json
 from django.shortcuts import get_object_or_404
 import redis
+from datetime import datetime
 # Create your views here.
 
 # rooms = [
@@ -275,14 +276,58 @@ def security_detail(request, name):
     down_prob =  round(float(last_entry[1][b'dwn_prob'].decode('utf-8')), 3)
     time =  last_entry[1][b'time'].decode('utf-8')
 
+    # Convert the Unix timestamp to an integer
+    '''
+    unix_timestamp = int(time)
+    
+# Create a datetime object from the Unix timestamp
+    dt = datetime.fromtimestamp(unix_timestamp)
+
+# Format the datetime object as a string
+    time_str = dt.strftime('%d-%m-%Y')
+    '''
+
+    EURUSD_60m = r.get(f'{name}_60m')
+    if EURUSD_60m is not None:
+            EURUSD_60m = EURUSD_60m.decode('utf-8')
+
+
+    EURUSD_60m = r.get(f'{name}_60m')
+    if EURUSD_60m is not None:
+        EURUSD_60m = EURUSD_60m.decode('utf-8')
+        EURUSD_60m = json.loads(EURUSD_60m)
+
+    # Prepare the data for Plotly
+    EURUSD_60m= EURUSD_60m['data'][-60:]
+
+    #ohlc_data={}
+    #for idx, entry in enumerate(EURUSD_60m):
+    #    ohlc_data[idx] = [entry[0], entry[1], entry[2], entry[3], entry[4], entry[5], entry[6]] 
 
     
+    
+    ohlc_data = {
+        'time': [entry[0] for entry in EURUSD_60m],
+        'open': [entry[2] for entry in EURUSD_60m],
+        'high': [entry[3] for entry in EURUSD_60m],
+        'low': [entry[4] for entry in EURUSD_60m],
+        'close': [entry[5] for entry in EURUSD_60m],
+        'timestring':[(datetime.fromtimestamp(entry[0]/1000)).strftime('%H:%M %d-%m') for entry in EURUSD_60m]
+    }
+    
+
+    #EURUSD_60m = {'time':}
     
     #stream_entries = r.xrange(stream_name)
 
     # You can now use the 'security' object to access data about the security
     # and pass it to your template. For example, you might pass the security's
     # name and description to the template.
+    
+
+    
+
+
 
     context = {
         'name': security.name,
@@ -292,6 +337,8 @@ def security_detail(request, name):
         'up_prob':up_prob,
         'down_prob':down_prob,
         'time':time,
+       # 'time_str':time_str,
+        'ohlc':ohlc_data,
         # Add any other data you want to pass to the template here
     }
 

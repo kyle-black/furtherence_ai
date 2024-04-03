@@ -1,6 +1,109 @@
 {% extends 'base/home.html' %} {% block content %}
+<style>
+  .layout {
+    padding: 50px; /* adjust this value as needed */
+  }
+</style>
 <main class="layout layout--3">
-  {{ name }} {{description}} close: {{close}} up_prob: {{up_prob}} down_prob:
-  {{down_prob}} time: {{time}}
+  <div id="ohlcChart"></div>
+  <h1>
+    {{description}} close: {{close}} up_prob: {{up_prob}} down_prob:
+    {{down_prob}} time: {{time}}
+  </h1>
+
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script>
+    var xData = {{ ohlc.timestring|safe }};
+
+    var ticktext = xData.map(function(value, i) {
+        return i % 2 === 0 ? value : '';  // return every other index
+    });
+    var trace = {
+        x: {{ ohlc.timestring|safe }},
+        open: {{ ohlc.open|safe }},
+        high: {{ ohlc.high|safe }},
+        low: {{ ohlc.low|safe }},
+        close: {{ ohlc.close|safe }},
+        type: 'candlestick'
+    };
+
+    var data = [trace];
+
+    var layout = {
+        title: '{{ name }}',
+        titlefont: {
+            color: '#ffffff'
+        },
+        shapes: [
+        {
+            type: 'line',
+            xref: 'paper',
+            x0: .5,
+            y0: 0.640,
+            x1: 2,
+            y1: 0.640,
+            line: {
+                color: 'rgb(255, 0, 0)',
+                width: 2
+            }
+        },
+        {
+            type: 'line',
+            xref: 'paper',
+            x0: 0,
+            y0: 0.650,
+            x1: 1,
+            y1: 0.650,
+            line: {
+                color: 'rgb(255, 0, 0)',
+                width: 2
+            }
+        }
+    ],
+        yaxis: {
+            title: 'Price',
+            domain: [0.01, 1],
+            titlefont: {
+                color: '#ffffff'
+            },
+            tickfont: {
+                family: 'Arial',
+                size: 8,
+                color: '#bdbdbd'
+            },
+            autorange: true,
+            range: [1.07, 1.10] // replace 'y_max_value' with the maximum y value in your data
+        },
+        xaxis: {
+            title: 'Date',
+            tickmode: 'array',
+            tickvals: xData,
+            ticktext: ticktext,
+            titlefont: {
+                color: '#ffffff'
+            },
+
+
+            showgrid: true,
+            gridcolor: 'rgba(189, 189, 189, 0.2)',
+            gridwidth: .5,
+            zeroline: true,
+            zerolinecolor: '#969696',
+            zerolinewidth: 4,
+            showticklabels: true,
+            tickangle: 45,
+            tickfont: {
+                family: 'Arial',
+                size: 8,
+                color: '#bdbdbd'
+            },
+            autorange: true
+        },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
+    };
+
+    Plotly.newPlot('ohlcChart', data, layout);
+  </script>
 </main>
 {% endblock %}
